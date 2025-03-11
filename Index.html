@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Resizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        canvas {
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h2>Image Resizer</h2>
+    <input type="file" id="upload" accept="image/*"><br><br>
+    <label>Width: <input type="number" id="width" value="300"></label>
+    <label>Height: <input type="number" id="height" value="300"></label>
+    <button onclick="resizeImage()">Resize</button>
+    <canvas id="canvas"></canvas>
+    <br>
+    <label>Save as: </label>
+    <select id="format">
+        <option value="png">PNG</option>
+        <option value="jpg">JPG</option>
+        <option value="webp">WEBP</option>
+        <option value="svg">SVG</option>
+    </select>
+    <button onclick="saveImage()">Download</button>
+
+    <script>
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let img = new Image();
+        
+        document.getElementById('upload').addEventListener('change', function(event) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        });
+
+        img.onload = function() {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+        }
+
+        function resizeImage() {
+            let newWidth = document.getElementById('width').value;
+            let newHeight = document.getElementById('height').value;
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+        }
+
+        function saveImage() {
+            let format = document.getElementById('format').value;
+            let link = document.createElement('a');
+            if (format === 'svg') {
+                let svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${canvas.width}' height='${canvas.height}'>` +
+                          `<image href='${canvas.toDataURL("image/png")}' width='100%' height='100%'/></svg>`;
+                let blob = new Blob([svg], { type: 'image/svg+xml' });
+                link.href = URL.createObjectURL(blob);
+                link.download = 'resized_image.svg';
+            } else {
+                link.href = canvas.toDataURL(`image/${format}`);
+                link.download = `resized_image.${format}`;
+            }
+            link.click();
+        }
+    </script>
+</body>
+</html>
