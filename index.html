@@ -3,37 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Resizer</title>
+    <title>Image Resizer & Enhancer</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
             text-align: center;
-            margin: 20px;
+        }
+        nav {
+            background: #333;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        input, select, button {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        button {
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
         }
         canvas {
             display: block;
-            margin: 10px auto;
-            border: 1px solid #ddd;
+            margin: 20px auto;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            transition: 0.5s;
+        }
+        footer {
+            background: #333;
+            color: white;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            font-size: 14px;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s forwards;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
 <body>
-    <h2>Image Resizer</h2>
-    <input type="file" id="upload" accept="image/*"><br><br>
-    <label>Width: <input type="number" id="width" value="300"></label>
-    <label>Height: <input type="number" id="height" value="300"></label>
-    <button onclick="resizeImage()">Resize</button>
-    <canvas id="canvas"></canvas>
-    <br>
-    <label>Save as: </label>
-    <select id="format">
-        <option value="png">PNG</option>
-        <option value="jpg">JPG</option>
-        <option value="webp">WEBP</option>
-        <option value="svg">SVG</option>
-    </select>
-    <button onclick="saveImage()">Download</button>
-
+    <nav>Image Resizer & Enhancer by Gaurav Tiwari</nav>
+    <div class="container fade-in">
+        <h2>Resize & Enhance Your Image</h2>
+        <input type="file" id="upload" accept="image/*"><br>
+        <label>Width: <input type="number" id="width" value="300"></label>
+        <label>Height: <input type="number" id="height" value="300"></label>
+        <button onclick="resizeImage()">Resize</button>
+        <button onclick="enhanceImage()">Enhance</button>
+        <canvas id="canvas"></canvas>
+        <br>
+        <label>Save as: </label>
+        <select id="format">
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="webp">WEBP</option>
+            <option value="svg">SVG</option>
+        </select>
+        <button onclick="saveImage()">Download</button>
+    </div>
+    <footer>© 2025 Gaurav Tiwari | Web Developer & Designer</footer>
     <script>
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d');
@@ -59,6 +117,17 @@
             canvas.width = newWidth;
             canvas.height = newHeight;
             ctx.drawImage(img, 0, 0, newWidth, newHeight);
+        }
+
+        function enhanceImage() {
+            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = Math.min(255, data[i] * 1.1);
+                data[i + 1] = Math.min(255, data[i + 1] * 1.1);
+                data[i + 2] = Math.min(255, data[i + 2] * 1.1);
+            }
+            ctx.putImageData(imageData, 0, 0);
         }
 
         function saveImage() {
