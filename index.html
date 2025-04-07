@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Resizer & Enhancer</title>
+    <title>Multi-Image Resizer & Enhancer</title>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -19,12 +19,13 @@
             font-size: 18px;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 40px auto;
             background: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 80px;
         }
         input, select, button {
             padding: 10px;
@@ -48,6 +49,7 @@
             border: 2px solid #ddd;
             border-radius: 5px;
             transition: 0.5s;
+            max-width: 100%;
         }
         footer {
             background: #333;
@@ -69,82 +71,605 @@
                 transform: translateY(0);
             }
         }
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .image-preview {
+            margin: 10px;
+            position: relative;
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .image-preview img {
+            max-width: 150px;
+            max-height: 150px;
+            display: block;
+        }
+        .image-preview .filename {
+            font-size: 12px;
+            margin-top: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 150px;
+        }
+        .image-preview .filesize {
+            font-size: 10px;
+            color: #666;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .progress {
+            width: 0%;
+            height: 20px;
+            background-color: #007BFF;
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #eee;
+            border-radius: 5px 5px 0 0;
+            margin: 0 5px;
+        }
+        .tab.active {
+            background: #007BFF;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .select-all {
+            margin: 10px;
+        }
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .control-group h3 {
+            width: 100%;
+            margin: 5px 0 15px 0;
+        }
+        .toggle-section {
+            cursor: pointer;
+            color: #007BFF;
+            margin: 10px 0;
+            display: inline-block;
+        }
+        .toggle-content {
+            display: none;
+        }
+        .toggle-content.active {
+            display: block;
+        }
+        .size-info {
+            font-size: 12px;
+            color: #666;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
-    <nav>Image Resizer & Enhancer by Gaurav Tiwari</nav>
+    <nav>Multi-Image Resizer & Enhancer by Gaurav Tiwari</nav>
     <div class="container fade-in">
-        <h2>Resize & Enhance Your Image</h2>
-        <input type="file" id="upload" accept="image/*"><br>
-        <label>Width: <input type="number" id="width" value="300"></label>
-        <label>Height: <input type="number" id="height" value="300"></label>
-        <button onclick="resizeImage()">Resize</button>
-        <button onclick="enhanceImage()">Enhance</button>
-        <canvas id="canvas"></canvas>
-        <br>
-        <label>Save as: </label>
-        <select id="format">
-            <option value="png">PNG</option>
-            <option value="jpg">JPG</option>
-            <option value="webp">WEBP</option>
-            <option value="svg">SVG</option>
-        </select>
-        <button onclick="saveImage()">Download</button>
+        <h2>Resize & Enhance Multiple Images</h2>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('single')">Single Image</div>
+            <div class="tab" onclick="switchTab('multiple')">Multiple Images</div>
+            <div class="tab" onclick="switchTab('folder')">Folder</div>
+        </div>
+        
+        <div id="single" class="tab-content active">
+            <input type="file" id="upload-single" accept="image/*"><br>
+            <div id="preview-single" class="preview-container"></div>
+        </div>
+        
+        <div id="multiple" class="tab-content">
+            <input type="file" id="upload-multiple" accept="image/*" multiple><br>
+            <div id="preview-multiple" class="preview-container"></div>
+        </div>
+        
+        <div id="folder" class="tab-content">
+            <input type="file" id="upload-folder" webkitdirectory directory multiple><br>
+            <div id="preview-folder" class="preview-container"></div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Size Settings</h3>
+            <div>
+                <label>Max File Size: <input type="number" id="max-size" value="500"></label>
+                <select id="size-unit">
+                    <option value="KB">KB</option>
+                    <option value="MB">MB</option>
+                </select>
+            </div>
+            <div class="size-info">
+                <p>Typical file sizes by resolution:</p>
+                <small>800x600: ~100-300KB | 1024x768: ~200-500KB | 1920x1080: ~500KB-2MB</small>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Dimension Settings</h3>
+            <div>
+                <span class="toggle-section" onclick="toggleResizeMethod()">Resize Method: <span id="resize-method-display">Custom Dimensions</span></span>
+            </div>
+            
+            <div id="dimensions-content" class="toggle-content active">
+                <label>Width: <input type="number" id="width" value="800"></label>
+                <label>Height: <input type="number" id="height" value="600"></label>
+                <div>
+                    <label><input type="checkbox" id="maintain-aspect"> Maintain aspect ratio</label>
+                </div>
+            </div>
+            
+            <div id="preset-content" class="toggle-content">
+                <select id="dimension-presets">
+                    <option value="800,600">800x600 (SVGA)</option>
+                    <option value="1024,768">1024x768 (XGA)</option>
+                    <option value="1280,720">1280x720 (HD)</option>
+                    <option value="1920,1080">1920x1080 (Full HD)</option>
+                    <option value="2560,1440">2560x1440 (QHD)</option>
+                    <option value="3840,2160">3840x2160 (4K UHD)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Image Operations</h3>
+            <button onclick="resizeImages()">Resize</button>
+            <button onclick="resizeToMaxSize()">Resize to Max Size</button>
+            <button onclick="enhanceImages()">Enhance</button>
+        </div>
+        
+        <div class="progress-bar">
+            <div id="progress" class="progress"></div>
+        </div>
+        
+        <div>
+            <label>Save as: </label>
+            <select id="format">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="webp">WEBP</option>
+                <option value="svg">SVG</option>
+            </select>
+            <select id="quality">
+                <option value="0.7">Medium Quality (70%)</option>
+                <option value="0.85" selected>High Quality (85%)</option>
+                <option value="0.95">Very High Quality (95%)</option>
+                <option value="1.0">Maximum Quality (100%)</option>
+            </select>
+            <button onclick="saveAllImages()">Download All</button>
+        </div>
     </div>
     <footer>© 2025 Gaurav Tiwari | Web Developer & Designer</footer>
+    
     <script>
-        let canvas = document.getElementById('canvas');
-        let ctx = canvas.getContext('2d');
-        let img = new Image();
+        let images = [];
+        let currentTab = 'single';
+        let resizeMethod = 'dimensions';
         
-        document.getElementById('upload').addEventListener('change', function(event) {
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(event.target.files[0]);
+        // Event listeners for file inputs
+        document.getElementById('upload-single').addEventListener('change', function(event) {
+            handleFiles(event.target.files, 'preview-single');
         });
-
-        img.onload = function() {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-        }
-
-        function resizeImage() {
-            let newWidth = document.getElementById('width').value;
-            let newHeight = document.getElementById('height').value;
-            canvas.width = newWidth;
-            canvas.height = newHeight;
-            ctx.drawImage(img, 0, 0, newWidth, newHeight);
-        }
-
-        function enhanceImage() {
-            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                data[i] = Math.min(255, data[i] * 1.1);
-                data[i + 1] = Math.min(255, data[i + 1] * 1.1);
-                data[i + 2] = Math.min(255, data[i + 2] * 1.1);
-            }
-            ctx.putImageData(imageData, 0, 0);
-        }
-
-        function saveImage() {
-            let format = document.getElementById('format').value;
-            let link = document.createElement('a');
-            if (format === 'svg') {
-                let svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${canvas.width}' height='${canvas.height}'>` +
-                          `<image href='${canvas.toDataURL("image/png")}' width='100%' height='100%'/></svg>`;
-                let blob = new Blob([svg], { type: 'image/svg+xml' });
-                link.href = URL.createObjectURL(blob);
-                link.download = 'resized_image.svg';
+        
+        document.getElementById('upload-multiple').addEventListener('change', function(event) {
+            handleFiles(event.target.files, 'preview-multiple');
+        });
+        
+        document.getElementById('upload-folder').addEventListener('change', function(event) {
+            handleFiles(event.target.files, 'preview-folder');
+        });
+        
+        // Toggle between resize methods
+        function toggleResizeMethod() {
+            if (resizeMethod === 'dimensions') {
+                resizeMethod = 'presets';
+                document.getElementById('resize-method-display').textContent = 'Dimension Presets';
+                document.getElementById('dimensions-content').classList.remove('active');
+                document.getElementById('preset-content').classList.add('active');
             } else {
-                link.href = canvas.toDataURL(`image/${format}`);
-                link.download = `resized_image.${format}`;
+                resizeMethod = 'dimensions';
+                document.getElementById('resize-method-display').textContent = 'Custom Dimensions';
+                document.getElementById('dimensions-content').classList.add('active');
+                document.getElementById('preset-content').classList.remove('active');
             }
-            link.click();
         }
+        
+        // Handle uploaded files
+        function handleFiles(files, previewId) {
+            images = [];
+            let previewContainer = document.getElementById(previewId);
+            previewContainer.innerHTML = '';
+            
+            let fileCount = files.length;
+            let processedCount = 0;
+            
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].type.startsWith('image/')) {
+                    let reader = new FileReader();
+                    let imageObj = {
+                        file: files[i],
+                        fileName: files[i].name,
+                        fileSize: files[i].size,
+                        img: new Image(),
+                        canvas: document.createElement('canvas'),
+                        enhanced: false
+                    };
+                    
+                    // Create preview element
+                    let preview = document.createElement('div');
+                    preview.className = 'image-preview';
+                    
+                    let img = document.createElement('img');
+                    let filename = document.createElement('div');
+                    filename.className = 'filename';
+                    filename.textContent = files[i].name;
+                    
+                    let filesize = document.createElement('div');
+                    filesize.className = 'filesize';
+                    filesize.textContent = formatFileSize(files[i].size);
+                    
+                    preview.appendChild(img);
+                    preview.appendChild(filename);
+                    preview.appendChild(filesize);
+                    previewContainer.appendChild(preview);
+                    
+                    reader.onload = function(e) {
+                        imageObj.img.src = e.target.result;
+                        img.src = e.target.result;
+                        
+                        imageObj.img.onload = function() {
+                            imageObj.canvas.width = imageObj.img.width;
+                            imageObj.canvas.height = imageObj.img.height;
+                            let ctx = imageObj.canvas.getContext('2d');
+                            ctx.drawImage(imageObj.img, 0, 0);
+                            
+                            processedCount++;
+                            updateProgress(processedCount / fileCount * 100);
+                            
+                            if (processedCount === fileCount) {
+                                updateProgress(0);
+                            }
+                        };
+                    };
+                    
+                    images.push(imageObj);
+                    reader.readAsDataURL(files[i]);
+                }
+            }
+        }
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes < 1024) {
+                return bytes + ' bytes';
+            } else if (bytes < 1048576) {
+                return (bytes / 1024).toFixed(1) + ' KB';
+            } else {
+                return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+        }
+        
+        // Get dimensions based on selected method
+        function getDimensions() {
+            if (resizeMethod === 'dimensions') {
+                let width = parseInt(document.getElementById('width').value);
+                let height = parseInt(document.getElementById('height').value);
+                return { width, height };
+            } else {
+                let preset = document.getElementById('dimension-presets').value.split(',');
+                return { 
+                    width: parseInt(preset[0]), 
+                    height: parseInt(preset[1]) 
+                };
+            }
+        }
+        
+        // Resize all images
+        function resizeImages() {
+            if (images.length === 0) {
+                alert('Please upload images first');
+                return;
+            }
+            
+            let dims = getDimensions();
+            let maintainAspect = document.getElementById('maintain-aspect').checked;
+            
+            if (isNaN(dims.width) || isNaN(dims.height) || dims.width <= 0 || dims.height <= 0) {
+                alert('Please enter valid dimensions');
+                return;
+            }
+            
+            images.forEach((imageObj, index) => {
+                setTimeout(() => {
+                    let ctx = imageObj.canvas.getContext('2d');
+                    let newWidth = dims.width;
+                    let newHeight = dims.height;
+                    
+                    if (maintainAspect) {
+                        let ratio = imageObj.img.width / imageObj.img.height;
+                        if (newWidth / newHeight > ratio) {
+                            newWidth = newHeight * ratio;
+                        } else {
+                            newHeight = newWidth / ratio;
+                        }
+                    }
+                    
+                    imageObj.canvas.width = newWidth;
+                    imageObj.canvas.height = newHeight;
+                    ctx.drawImage(imageObj.img, 0, 0, newWidth, newHeight);
+                    
+                    // Update preview
+                    updatePreviewImage(index, imageObj);
+                    
+                    updateProgress((index + 1) / images.length * 100);
+                }, index * 50);
+            });
+        }
+        
+        // Resize images to maximum file size
+        function resizeToMaxSize() {
+            if (images.length === 0) {
+                alert('Please upload images first');
+                return;
+            }
+            
+            let maxSize = parseInt(document.getElementById('max-size').value);
+            let unit = document.getElementById('size-unit').value;
+            
+            // Convert to bytes
+            if (unit === 'KB') {
+                maxSize = maxSize * 1024;
+            } else if (unit === 'MB') {
+                maxSize = maxSize * 1024 * 1024;
+            }
+            
+            if (isNaN(maxSize) || maxSize <= 0) {
+                alert('Please enter a valid maximum size');
+                return;
+            }
+            
+            let quality = parseFloat(document.getElementById('quality').value);
+            let format = document.getElementById('format').value;
+            let mimeType = `image/${format === 'jpg' ? 'jpeg' : format}`;
+            
+            images.forEach((imageObj, index) => {
+                setTimeout(() => {
+                    // Start with original dimensions
+                    let width = imageObj.img.width;
+                    let height = imageObj.img.height;
+                    let ctx = imageObj.canvas.getContext('2d');
+                    
+                    // Binary search to find the right size
+                    let minScale = 0.1;
+                    let maxScale = 1.0;
+                    let currentScale;
+                    let attempts = 0;
+                    let maxAttempts = 10;
+                    
+                    function attemptResize() {
+                        currentScale = (minScale + maxScale) / 2;
+                        let newWidth = Math.floor(width * currentScale);
+                        let newHeight = Math.floor(height * currentScale);
+                        
+                        // Make sure dimensions are at least 1px
+                        newWidth = Math.max(1, newWidth);
+                        newHeight = Math.max(1, newHeight);
+                        
+                        imageObj.canvas.width = newWidth;
+                        imageObj.canvas.height = newHeight;
+                        ctx.drawImage(imageObj.img, 0, 0, newWidth, newHeight);
+                        
+                        let dataURL = imageObj.canvas.toDataURL(mimeType, quality);
+                        let size = getDataURLSize(dataURL);
+                        
+                        attempts++;
+                        
+                        // Check if we've found an acceptable size or reached max attempts
+                        if (Math.abs(size - maxSize) < maxSize * 0.05 || attempts >= maxAttempts || (maxScale - minScale) < 0.01) {
+                            // If still too large, make one final resize attempt
+                            if (size > maxSize && attempts < maxAttempts) {
+                                minScale = minScale / 2;
+                                maxScale = currentScale;
+                                attemptResize();
+                            } else {
+                                // Update preview and file size info
+                                updatePreviewImage(index, imageObj);
+                                updateProgress((index + 1) / images.length * 100);
+                            }
+                        } else {
+                            // Binary search adjustment
+                            if (size > maxSize) {
+                                maxScale = currentScale;
+                            } else {
+                                minScale = currentScale;
+                            }
+                            attemptResize();
+                        }
+                    }
+                    
+                    attemptResize();
+                }, index * 100);
+            });
+        }
+        
+        // Get size of data URL in bytes
+        function getDataURLSize(dataURL) {
+            // Remove metadata from the data URL
+            let binary = atob(dataURL.split(',')[1]);
+            return binary.length;
+        }
+        
+        // Update preview image and file size
+        function updatePreviewImage(index, imageObj) {
+            let previewContainer = document.getElementById(`preview-${currentTab}`);
+            if (previewContainer.children[index]) {
+                let img = previewContainer.children[index].querySelector('img');
+                img.src = imageObj.canvas.toDataURL();
+                
+                let format = document.getElementById('format').value;
+                let quality = parseFloat(document.getElementById('quality').value);
+                let mimeType = `image/${format === 'jpg' ? 'jpeg' : format}`;
+                let dataURL = imageObj.canvas.toDataURL(mimeType, quality);
+                let size = getDataURLSize(dataURL);
+                
+                let filesize = previewContainer.children[index].querySelector('.filesize');
+                filesize.textContent = formatFileSize(size) + 
+                    ` (${imageObj.canvas.width}x${imageObj.canvas.height})`;
+            }
+        }
+        
+        // Enhance all images
+        function enhanceImages() {
+            if (images.length === 0) {
+                alert('Please upload images first');
+                return;
+            }
+            
+            images.forEach((imageObj, index) => {
+                setTimeout(() => {
+                    let ctx = imageObj.canvas.getContext('2d');
+                    let imageData = ctx.getImageData(0, 0, imageObj.canvas.width, imageObj.canvas.height);
+                    let data = imageData.data;
+                    
+                    for (let i = 0; i < data.length; i += 4) {
+                        data[i] = Math.min(255, data[i] * 1.1);      // R
+                        data[i + 1] = Math.min(255, data[i + 1] * 1.1); // G
+                        data[i + 2] = Math.min(255, data[i + 2] * 1.1); // B
+                    }
+                    
+                    ctx.putImageData(imageData, 0, 0);
+                    imageObj.enhanced = true;
+                    
+                    // Update preview
+                    updatePreviewImage(index, imageObj);
+                    
+                    updateProgress((index + 1) / images.length * 100);
+                }, index * 50);
+            });
+        }
+        
+        // Save all images
+        function saveAllImages() {
+            if (images.length === 0) {
+                alert('Please upload images first');
+                return;
+            }
+            
+            let format = document.getElementById('format').value;
+            let quality = parseFloat(document.getElementById('quality').value);
+            let mimeType = `image/${format === 'jpg' ? 'jpeg' : format}`;
+            let zip = new JSZip();
+            
+            // Create a zip file when there are multiple images
+            if (images.length > 1) {
+                images.forEach((imageObj, index) => {
+                    setTimeout(() => {
+                        let fileName = getFileNameWithoutExtension(imageObj.fileName);
+                        
+                        if (format === 'svg') {
+                            let svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${imageObj.canvas.width}' height='${imageObj.canvas.height}'>` +
+                                    `<image href='${imageObj.canvas.toDataURL("image/png")}' width='100%' height='100%'/></svg>`;
+                            zip.file(`${fileName}.svg`, svg);
+                        } else {
+                            let dataURL = imageObj.canvas.toDataURL(mimeType, quality);
+                            // Remove the data URL prefix
+                            let binary = atob(dataURL.split(',')[1]);
+                            let array = [];
+                            for (let i = 0; i < binary.length; i++) {
+                                array.push(binary.charCodeAt(i));
+                            }
+                            zip.file(`${fileName}.${format}`, new Uint8Array(array), {base64: false});
+                        }
+                        
+                        updateProgress((index + 1) / images.length * 100);
+                        
+                        // Generate the zip file when all images are processed
+                        if (index === images.length - 1) {
+                            zip.generateAsync({type: 'blob'}).then(function(content) {
+                                let link = document.createElement('a');
+                                link.href = URL.createObjectURL(content);
+                                link.download = 'resized_images.zip';
+                                link.click();
+                                updateProgress(0);
+                            });
+                        }
+                    }, index * 50);
+                });
+            } else if (images.length === 1) {
+                // For single image, don't create a zip
+                let imageObj = images[0];
+                let fileName = getFileNameWithoutExtension(imageObj.fileName);
+                let link = document.createElement('a');
+                
+                if (format === 'svg') {
+                    let svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${imageObj.canvas.width}' height='${imageObj.canvas.height}'>` +
+                            `<image href='${imageObj.canvas.toDataURL("image/png")}' width='100%' height='100%'/></svg>`;
+                    let blob = new Blob([svg], { type: 'image/svg+xml' });
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `${fileName}.svg`;
+                } else {
+                    link.href = imageObj.canvas.toDataURL(mimeType, quality);
+                    link.download = `${fileName}.${format}`;
+                }
+                
+                link.click();
+            }
+        }
+        
+        // Update progress bar
+        function updateProgress(percentage) {
+            document.getElementById('progress').style.width = percentage + '%';
+        }
+        
+        // Switch between tabs
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update active tab
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            
+            document.querySelector(`.tab:nth-child(${tab === 'single' ? 1 : tab === 'multiple' ? 2 : 3})`).classList.add('active');
+            document.getElementById(tab).classList.add('active');
+        }
+        
+        // Get filename without extension
+        function getFileNameWithoutExtension(filename) {
+            return filename.split('.').slice(0, -1).join('.');
+        }
+        
+        document.getElementById('maintain-aspect').checked = true;
     </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
